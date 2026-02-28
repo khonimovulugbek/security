@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <!-- ================================================================
+         USERS table
+         - Soft-delete via DELETED column (0 = active, 1 = deleted)
+         - All Spring Security account-status flags stored explicitly
+         - TIMESTAMP WITH TIME ZONE for audit columns (Oracle-native)
+         ================================================================ -->
+
+    <changeSet id="002-1" author="security-module">
+        <comment>Create USERS table</comment>
+        <createTable tableName="USERS" remarks="Application user accounts">
+
+            <column name="ID" type="NUMBER(19,0)" remarks="Primary key, populated from SEQ_USERS">
+                <constraints primaryKey="true" primaryKeyName="PK_USERS" nullable="false"/>
+            </column>
+
+            <column name="USERNAME" type="VARCHAR2(50 CHAR)" remarks="Unique login identifier">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="EMAIL" type="VARCHAR2(100 CHAR)" remarks="Unique e-mail address">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Stored as BCrypt hash ($2a$12$...) — never plain-text -->
+            <column name="PASSWORD_HASH" type="VARCHAR2(255 CHAR)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="FIRST_NAME" type="VARCHAR2(100 CHAR)"/>
+            <column name="LAST_NAME"  type="VARCHAR2(100 CHAR)"/>
+
+            <!-- Spring Security account-status flags (0=false, 1=true) -->
+            <column name="ENABLED"                    type="NUMBER(1,0)" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ACCOUNT_NON_EXPIRED"        type="NUMBER(1,0)" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ACCOUNT_NON_LOCKED"         type="NUMBER(1,0)" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="CREDENTIALS_NON_EXPIRED"    type="NUMBER(1,0)" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Soft-delete flag -->
+            <column name="DELETED" type="NUMBER(1,0)" defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+
+            <!-- Audit timestamps -->
+            <column name="CREATED_AT" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="UPDATED_AT" type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+    </changeSet>
+
+    <changeSet id="002-2" author="security-module">
+        <comment>Unique constraints on USERS</comment>
+        <addUniqueConstraint tableName="USERS" columnNames="USERNAME"
+                             constraintName="UQ_USERS_USERNAME"/>
+        <addUniqueConstraint tableName="USERS" columnNames="EMAIL"
+                             constraintName="UQ_USERS_EMAIL"/>
+    </changeSet>
+
+    <changeSet id="002-3" author="security-module">
+        <comment>Check constraints to enforce valid boolean values</comment>
+        <sql>ALTER TABLE USERS ADD CONSTRAINT CHK_USERS_ENABLED                 CHECK (ENABLED IN (0,1))</sql>
+        <sql>ALTER TABLE USERS ADD CONSTRAINT CHK_USERS_ACCT_EXP               CHECK (ACCOUNT_NON_EXPIRED IN (0,1))</sql>
+        <sql>ALTER TABLE USERS ADD CONSTRAINT CHK_USERS_ACCT_LOCKED            CHECK (ACCOUNT_NON_LOCKED IN (0,1))</sql>
+        <sql>ALTER TABLE USERS ADD CONSTRAINT CHK_USERS_CRED_EXP               CHECK (CREDENTIALS_NON_EXPIRED IN (0,1))</sql>
+        <sql>ALTER TABLE USERS ADD CONSTRAINT CHK_USERS_DELETED                CHECK (DELETED IN (0,1))</sql>
+    </changeSet>
+
+    <changeSet id="002-4" author="security-module">
+        <comment>Performance indexes on USERS</comment>
+        <createIndex tableName="USERS" indexName="IDX_USERS_USERNAME">
+            <column name="USERNAME"/>
+        </createIndex>
+        <createIndex tableName="USERS" indexName="IDX_USERS_EMAIL">
+            <column name="EMAIL"/>
+        </createIndex>
+        <!-- Partial-index emulation: most queries filter on deleted=0 -->
+        <createIndex tableName="USERS" indexName="IDX_USERS_DELETED">
+            <column name="DELETED"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

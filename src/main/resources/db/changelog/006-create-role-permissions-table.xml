@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <!-- ================================================================
+         ROLE_PERMISSIONS join table  (many-to-many: ROLES ↔ PERMISSIONS)
+         ================================================================ -->
+
+    <changeSet id="006-1" author="security-module">
+        <comment>Create ROLE_PERMISSIONS join table</comment>
+        <createTable tableName="ROLE_PERMISSIONS">
+
+            <column name="ROLE_ID" type="NUMBER(19,0)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="PERMISSION_ID" type="NUMBER(19,0)">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+    </changeSet>
+
+    <changeSet id="006-2" author="security-module">
+        <comment>Composite PK + FK constraints on ROLE_PERMISSIONS</comment>
+        <addPrimaryKey tableName="ROLE_PERMISSIONS"
+                       columnNames="ROLE_ID, PERMISSION_ID"
+                       constraintName="PK_ROLE_PERMISSIONS"/>
+        <addForeignKeyConstraint
+                baseTableName="ROLE_PERMISSIONS"    baseColumnNames="ROLE_ID"
+                referencedTableName="ROLES"          referencedColumnNames="ID"
+                constraintName="FK_ROLE_PERMS_ROLE"
+                onDelete="CASCADE"/>
+        <addForeignKeyConstraint
+                baseTableName="ROLE_PERMISSIONS"    baseColumnNames="PERMISSION_ID"
+                referencedTableName="PERMISSIONS"    referencedColumnNames="ID"
+                constraintName="FK_ROLE_PERMS_PERMISSION"
+                onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="006-3" author="security-module">
+        <comment>Indexes on ROLE_PERMISSIONS</comment>
+        <createIndex tableName="ROLE_PERMISSIONS" indexName="IDX_ROLE_PERMS_ROLE_ID">
+            <column name="ROLE_ID"/>
+        </createIndex>
+        <createIndex tableName="ROLE_PERMISSIONS" indexName="IDX_ROLE_PERMS_PERM_ID">
+            <column name="PERMISSION_ID"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

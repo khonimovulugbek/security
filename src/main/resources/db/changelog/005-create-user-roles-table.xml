@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+            http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.27.xsd">
+
+    <!-- ================================================================
+         USER_ROLES join table  (many-to-many: USERS ↔ ROLES)
+         ================================================================ -->
+
+    <changeSet id="005-1" author="security-module">
+        <comment>Create USER_ROLES join table</comment>
+        <createTable tableName="USER_ROLES">
+
+            <column name="USER_ID" type="NUMBER(19,0)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="ROLE_ID" type="NUMBER(19,0)">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+    </changeSet>
+
+    <changeSet id="005-2" author="security-module">
+        <comment>Composite PK + FK constraints on USER_ROLES</comment>
+        <addPrimaryKey tableName="USER_ROLES"
+                       columnNames="USER_ID, ROLE_ID"
+                       constraintName="PK_USER_ROLES"/>
+        <addForeignKeyConstraint
+                baseTableName="USER_ROLES"    baseColumnNames="USER_ID"
+                referencedTableName="USERS"   referencedColumnNames="ID"
+                constraintName="FK_USER_ROLES_USER"
+                onDelete="CASCADE"/>
+        <addForeignKeyConstraint
+                baseTableName="USER_ROLES"    baseColumnNames="ROLE_ID"
+                referencedTableName="ROLES"   referencedColumnNames="ID"
+                constraintName="FK_USER_ROLES_ROLE"
+                onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="005-3" author="security-module">
+        <comment>Indexes on USER_ROLES for lookup performance</comment>
+        <createIndex tableName="USER_ROLES" indexName="IDX_USER_ROLES_USER_ID">
+            <column name="USER_ID"/>
+        </createIndex>
+        <createIndex tableName="USER_ROLES" indexName="IDX_USER_ROLES_ROLE_ID">
+            <column name="ROLE_ID"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
